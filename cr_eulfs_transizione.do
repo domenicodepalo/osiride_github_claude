@@ -49,7 +49,8 @@ local last_year  = ${last_year}
 
 global eulfs			/home/group/main/rdc/private/EULFS/dati/Yearly_Files/csv
 global age_classes		CZ IE NL SK		// Forniscono solo classi di eta' (AGE_GRP) per tutte le eta', non l'eta' puntuale
-global paesi_no_italia	/* ${age_classes} */ AT BE BG CH CY DE DK EE EL ES FI FR HR HU LT LU LV NO PL PT RO SE SI	// Paesi presenti sia nel 2004 sia nel 2024, esclusa IT. Elimino ${age_classes} perche' forniscono solo classi di eta': eta' dei genitori e dei figli entrambe imputate -> errore di misura su age_first_birth
+global no_famiglia		CH				// Dati familiari (HHLINK, COEFFHH) non sempre disponibili (es. CH2014 tutti vuoti): non posso costruire age_first_birth
+global paesi_no_italia	/* ${age_classes} ${no_famiglia} */ AT BE BG CY DE DK EE EL ES FI FR HR HU LT LU LV NO PL PT RO SE SI	// Paesi presenti sia nel 2004 sia nel 2024, esclusa IT. Elimino ${age_classes} perche' forniscono solo classi di eta': eta' dei genitori e dei figli entrambe imputate -> errore di misura su age_first_birth. Elimino ${no_famiglia} perche' i dati familiari non sono sempre disponibili
 global restr_ever_worked	= 1			// 1 = tengo solo chi ha mai lavorato. Proxy della selezione RFL "drop if missing(dif_job)": in EU-LFS non c'e' l'eta'/anno del primo lavoro (YSTARTWK = inizio del lavoro attuale)
 
 set seed 2023							// Come RFL: rende riproducibile l'imputazione casuale dell'eta'
