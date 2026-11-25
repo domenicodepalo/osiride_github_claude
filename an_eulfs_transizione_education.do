@@ -1,35 +1,32 @@
 /*******************************************************************************
 an_eulfs_transizione_education.do
-Analogo EU-LFS delle figure regs_rfl_transizione_{birth,job}_college{0,1}.pdf
+Analogo EU-LFS delle figure regs_rfl_transizione_birth_college{0,1}.pdf
 Output: ${graphs}/regs_eulfs_transizione_birth_{si,no}_italia_college{0,1}.pdf
 Richiede: ${data}/eulfs_transizione.dta (cr_eulfs_transizione.do), ${paesi_no_italia},
           ${graphs} ${first_year} ${last_year}, regsave (ssc)
 
-Figure "job" (reg age_first_job age_education) NON prodotte: in EU-LFS non c'e'
-l'eta'/anno del primo lavoro (vedi cr_eulfs_transizione.do).
-
-no_italia: regressioni pooled sui paesi in ${paesi_no_italia}, con effetti fissi
-paese ${fe_paese} (lasciare vuota la global per replicare la specifica RFL senza FE).
-Pesi = COEFFHH (pesi di popolazione: i paesi grandi pesano di piu').
+Figure "job" (reg age_first_job age_education) non prodotte: in EU-LFS non c'e'
+l'eta'/anno del primo lavoro.
+Regressioni "All years" e "birth on job" di RFL non replicate: non entrano nelle figure richieste.
 *******************************************************************************/
 local first_year 		= ${first_year}
 local last_year 		= ${last_year}
-global fe_paese			i.paese_n
+global fe_paese			i.paese_n		// Effetti fissi paese nel pool no_italia: confronto entro paese, come la regressione sulla sola IT. Lasciare vuota per la specifica RFL senza FE
 
 if "${paesi_no_italia}"=="" {
-	di as error "Global paesi_no_italia vuota: eseguire prima cr_eulfs_transizione.do"
+	di as error "Global paesi_no_italia vuota: eseguire prima cr_eulfs_transizione.do"	// La lista dei paesi e' definita nel cr_
 	exit 198
 }
 
 clear
 set obs 1
 gen butta=1
-save ${graphs}/eulfs_transizione_education.dta,replace
+save ${graphs}/eulfs_transizione_education.dta,replace				// Come RFL: file vuoto a cui regsave appende
 
 foreach campione in si_italia no_italia {
 	if "`campione'"=="si_italia" {
 		local paesi IT
-		local fe
+		local fe														// Un solo paese: nessun FE, specifica identica a RFL
 	}
 	else {
 		local paesi ${paesi_no_italia}
@@ -42,7 +39,7 @@ foreach campione in si_italia no_italia {
 			replace in_campione = 1 if paese=="`cc'"
 		}
 		keep if in_campione==1
-		encode paese, gen(paese_n)
+		encode paese, gen(paese_n)										// Paese numerico per i FE
 		/*******************************************************************************
 		By years
 		*******************************************************************************/
@@ -51,10 +48,10 @@ foreach campione in si_italia no_italia {
 			noi di "`campione' college`ksd' `akh'"
 			noi di "*******************************************"
 			forvalues sklno=0/1 {
-				capture noisily reg age_first_birth	age_education `fe'		[pw=peso] if donna==`sklno' &  anno==`akh'
-				if _rc==0 {
+				capture noisily reg age_first_birth	age_education `fe'		[pw=peso] if donna==`sklno' &  anno==`akh'	// Come RFL; pesi COEFFHH = pesi di popolazione (nel pool i paesi grandi pesano di piu')
+				if _rc==0 {												// capture: un anno senza osservazioni non interrompe il loop
 					regsave age_education using ${graphs}/eulfs_transizione_education.dta, ///
-						append pval ci level(95) addlabel(outcome,"age_first_birth",college,`ksd',gender,`sklno',year,`akh',campione,"`campione'")
+						append pval ci level(95) addlabel(outcome,"age_first_birth",college,`ksd',gender,`sklno',year,`akh',campione,"`campione'")	// regsave salva anche N: controllare le soglie minime prima di pubblicare
 				}
 			}
 		}
@@ -77,7 +74,7 @@ foreach campione in si_italia no_italia {
 			yline(0) ylabel(.2(.1).5) ytick(.25(.1).45,grid)
 			name(birth,replace)
 		; #delimit cr;
-		graph export "${graphs}/regs_eulfs_transizione_birth_`campione'_college`ksd'.pdf", replace
+		graph export "${graphs}/regs_eulfs_transizione_birth_`campione'_college`ksd'.pdf", replace	// Stessi assi della figura RFL: confronto visivo diretto
 		gr drop _all
 	}
 }
