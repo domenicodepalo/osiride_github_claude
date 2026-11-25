@@ -76,8 +76,9 @@ foreach cc in IT ${paesi_no_italia} {
 		}
 		keep `keepingdata'
 		foreach v of local keepingdata {
-			replace `v' = strtrim(`v')
+			qui replace `v' = strtrim(`v')
 		}
+		replace quarter = regexs(1) if regexm(quarter,"([1-4])$")					// QUARTER e' alfanumerico (es. "Q1" o "2014Q1"): tengo la cifra del trimestre
 		destring `numvars', replace force											// force: codici non numerici -> missing
 		gen paese = "`cc'"																// Codice paese dal nome file
 		ren refyear anno																// Stesso nome di RFL
@@ -87,7 +88,10 @@ foreach cc in IT ${paesi_no_italia} {
 		keep if coeffhh>0 & !missing(coeffhh)							// Sottocampione per analisi con background familiare (HHLINK): User Guide cap. 7.2 prescrive COEFFHH
 		gen peso = coeffhh												// Peso annuale (in migliaia). In RFL: coef1/4; qui il peso e' gia' annuale
 		qui count
-		if r(N)==0 noi di as error "`cc'`yy': nessuna obs con COEFFHH>0"
+		if r(N)==0 {
+			noi di as error "`cc'`yy': nessuna obs con COEFFHH>0 (niente dati familiari): paese-anno escluso"	// Senza HHLINK non posso costruire age_first_birth
+			continue
+		}
 
 		/* Demographics */
 			* Identify HH
